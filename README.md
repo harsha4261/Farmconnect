@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Flutter
 
 A modern Flutter-based mobile application utilizing the latest mobile development technologies and tools for building responsive cross-platform applications.
@@ -110,3 +111,6 @@ flutter build ios --release
 - Styled with Material Design
 
 Built with ❤️ on Rocket.new
+=======
+# Farmconnect
+>>>>>>> f41385c7fec998ad5760ebd4a7a471abeb01220d
