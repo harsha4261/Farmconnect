@@ -95,7 +95,7 @@ class _CropYieldPredictionWidgetState extends State<CropYieldPredictionWidget> {
                   ),
                   SizedBox(height: 1.h),
                   DropdownButtonFormField<String>(
-                    value: _selectedCrop,
+                    initialValue: _selectedCrop,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -127,7 +127,7 @@ class _CropYieldPredictionWidgetState extends State<CropYieldPredictionWidget> {
                   ),
                   SizedBox(height: 1.h),
                   DropdownButtonFormField<String>(
-                    value: _selectedSoilType,
+                    initialValue: _selectedSoilType,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),

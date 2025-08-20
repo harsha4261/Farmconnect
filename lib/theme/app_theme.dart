@@ -142,7 +142,7 @@ class AppTheme {
     ),
 
     // Enhanced card theme with beautiful shadows
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardLight,
       elevation: 8.0,
       shadowColor: shadowColoredLight,
@@ -326,7 +326,7 @@ class AppTheme {
     ),
 
     // Tab bar theme for navigation
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: primaryLight,
       unselectedLabelColor: textSecondaryLight,
       indicatorColor: primaryLight,
@@ -456,7 +456,7 @@ class AppTheme {
     ),
 
     // Card theme for adaptive cards with subtle elevation
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardDark,
       elevation: 2.0,
       shadowColor: shadowDark,
@@ -636,7 +636,7 @@ class AppTheme {
     ),
 
     // Tab bar theme for navigation
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: primaryDark,
       unselectedLabelColor: textSecondaryDark,
       indicatorColor: primaryDark,

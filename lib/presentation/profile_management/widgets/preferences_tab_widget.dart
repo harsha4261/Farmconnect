@@ -255,7 +255,7 @@ class _PreferencesTabWidgetState extends State<PreferencesTabWidget> {
             borderRadius: BorderRadius.circular(12.sp),
             border: Border.all(color: Colors.grey[300]!)),
         child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             decoration: InputDecoration(
                 labelText: label,
                 prefixIcon: Icon(icon),

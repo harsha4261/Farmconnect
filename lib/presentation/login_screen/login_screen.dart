@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../core/services/auth/auth_service.dart';
 import './widgets/biometric_auth_widget.dart';
 import './widgets/country_code_picker_widget.dart';
+
+// Login method selection (top-level)
+enum _LoginMethod { phone, email }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -27,25 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _passwordError;
   String? _generalError;
   bool _rememberPhone = true;
-
-  // Mock credentials for different user types
-  final Map<String, Map<String, dynamic>> _mockCredentials = {
-    '9876543210': {
-      'password': 'farmer123',
-      'role': 'Farmer',
-      'name': 'Rajesh Kumar'
-    },
-    '8765432109': {
-      'password': 'worker123',
-      'role': 'Worker',
-      'name': 'Amit Singh'
-    },
-    '7654321098': {
-      'password': 'admin123',
-      'role': 'Admin',
-      'name': 'Priya Sharma'
-    }
-  };
+  String? _verificationId;
+  _LoginMethod _loginMethod = _LoginMethod.phone;
 
   @override
   void initState() {
@@ -87,28 +75,45 @@ class _LoginScreenState extends State<LoginScreen> {
       _generalError = null;
     });
 
-    if (_phoneController.text.isEmpty) {
-      setState(() {
-        _phoneError = 'Phone number is required';
-      });
-      isValid = false;
-    } else if (_phoneController.text.length < 10) {
-      setState(() {
-        _phoneError = 'Please enter a valid 10-digit phone number';
-      });
-      isValid = false;
-    }
+    final input = _phoneController.text.trim();
+    final isEmailMethod = _loginMethod == _LoginMethod.email;
 
-    if (_passwordController.text.isEmpty) {
-      setState(() {
-        _passwordError = 'Password is required';
-      });
-      isValid = false;
-    } else if (_passwordController.text.length < 6) {
-      setState(() {
-        _passwordError = 'Password must be at least 6 characters';
-      });
-      isValid = false;
+    if (isEmailMethod) {
+      // Basic email validation
+      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+      if (!emailRegex.hasMatch(input)) {
+        setState(() {
+          _phoneError = 'Enter a valid email address';
+        });
+        isValid = false;
+      }
+      if (_passwordController.text.isEmpty) {
+        setState(() {
+          _passwordError = 'Password is required';
+        });
+        isValid = false;
+      } else if (_passwordController.text.length < 6) {
+        setState(() {
+          _passwordError = 'Password must be at least 6 characters';
+        });
+        isValid = false;
+      }
+    } else {
+      // Phone validation
+      if (input.isEmpty) {
+        setState(() {
+          _phoneError = 'Phone number is required';
+        });
+        isValid = false;
+      } else {
+        final digits = input.replaceAll(RegExp(r'[^0-9]'), '');
+        if (digits.length < 10) {
+          setState(() {
+            _phoneError = 'Please enter a valid 10-digit phone number';
+          });
+          isValid = false;
+        }
+      }
     }
 
     return isValid;
@@ -123,45 +128,60 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
+      final input = _phoneController.text.trim();
+      final isEmailMethod = _loginMethod == _LoginMethod.email;
 
-      final phone = _phoneController.text.trim();
-      final password = _passwordController.text.trim();
-
-      if (_mockCredentials.containsKey(phone)) {
-        final userCredentials = _mockCredentials[phone]!;
-        if (userCredentials['password'] == password) {
-          // Success - trigger haptic feedback
-          HapticFeedback.lightImpact();
-
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome back, ${userCredentials['name']}!'),
-              backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-
-          // Navigate based on role
-          final role = userCredentials['role'];
-          if (role == 'Farmer') {
-            Navigator.pushReplacementNamed(context, '/farmer-dashboard');
-          } else if (role == 'Worker') {
-            Navigator.pushReplacementNamed(context, '/worker-dashboard');
+      if (isEmailMethod) {
+        final password = _passwordController.text.trim();
+        try {
+          await AuthService().signInWithEmail(input, password);
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'user-not-found') {
+            await AuthService().createUserWithEmail(input, password);
+          } else if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
+            setState(() {
+              _generalError = 'Incorrect password. Please try again.';
+            });
+            return;
           } else {
-            Navigator.pushReplacementNamed(context, '/farmer-dashboard');
+            setState(() {
+              _generalError = e.message ?? 'Authentication error';
+            });
+            return;
           }
-        } else {
-          setState(() {
-            _generalError = 'Invalid password. Please check your credentials.';
-          });
         }
+        HapticFeedback.lightImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Login successful'),
+            backgroundColor: AppTheme.lightTheme.colorScheme.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/farmer-dashboard');
       } else {
-        setState(() {
-          _generalError = 'Phone number not registered. Please sign up first.';
-        });
+        final digits = input.replaceAll(RegExp(r'[^0-9]'), '');
+        final phoneNumber = '$_selectedCountryCode$digits';
+        await AuthService().sendOtp(
+          phoneNumber,
+          onVerified: (cred) async {
+            await AuthService().signInWithCredential(cred);
+            if (!mounted) return;
+            Navigator.pushReplacementNamed(context, '/farmer-dashboard');
+          },
+          onFailed: (e) {
+            setState(() {
+              _generalError = e.message ?? 'Phone verification failed';
+            });
+          },
+          onCodeSent: (verificationId, _) {
+            _verificationId = verificationId;
+            _showOtpDialog();
+          },
+          onAutoRetrievalTimeout: (verificationId) {
+            _verificationId = verificationId;
+          },
+        );
       }
     } catch (e) {
       setState(() {
@@ -173,6 +193,56 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _showOtpDialog() {
+    final codeController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Enter OTP',
+            style: AppTheme.lightTheme.textTheme.titleLarge,
+          ),
+          content: TextField(
+            controller: codeController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(hintText: '6-digit code'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final code = codeController.text.trim();
+                if (_verificationId != null && code.isNotEmpty) {
+                  try {
+                    await AuthService().signInWithSmsCode(
+                      verificationId: _verificationId!,
+                      smsCode: code,
+                    );
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(
+                        context, '/farmer-dashboard');
+                  } catch (e) {
+                    setState(() {
+                      _generalError = 'Invalid code. Please try again.';
+                    });
+                    Navigator.pop(context);
+                  }
+                }
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleForgotPassword() {
@@ -209,9 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _handleSignUp() {
-    Navigator.pushNamed(context, '/signup-screen');
-  }
+  // No dedicated signup screen; email login will auto-create accounts when needed.
 
   @override
   void dispose() {
@@ -250,13 +318,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   SizedBox(height: 4.h),
 
+                  // Login method toggle
+                  _buildLoginMethodToggle(),
+
                   // Phone Number Input
                   _buildPhoneNumberField(),
 
                   SizedBox(height: 3.h),
 
                   // Password Input
-                  _buildPasswordField(),
+                  if (_loginMethod == _LoginMethod.email) _buildPasswordField(),
 
                   SizedBox(height: 1.h),
 
@@ -278,16 +349,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Biometric Authentication
                   BiometricAuthWidget(
                     onBiometricSuccess: () {
-                      _phoneController.text = '9876543210';
-                      _passwordController.text = 'farmer123';
+                      setState(() {
+                        _loginMethod = _LoginMethod.email;
+                        _phoneController.text = 'test@example.com';
+                        _passwordController.text = 'StrongPass!123';
+                      });
                       _handleLogin();
                     },
                   ),
 
                   SizedBox(height: 4.h),
 
-                  // Sign Up Link
-                  _buildSignUpLink(),
+                  // Sign Up link removed (JIT account creation in email flow)
 
                   SizedBox(height: 2.h),
                 ],
@@ -296,6 +369,26 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLoginMethodToggle() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ChoiceChip(
+          label: const Text('Phone'),
+          selected: _loginMethod == _LoginMethod.phone,
+          onSelected: (_) => setState(() => _loginMethod = _LoginMethod.phone),
+        ),
+        SizedBox(width: 3.w),
+        ChoiceChip(
+          label: const Text('Email'),
+          selected: _loginMethod == _LoginMethod.email,
+          onSelected: (_) => setState(() => _loginMethod = _LoginMethod.email),
+        ),
+        SizedBox(height: 2.h),
+      ],
     );
   }
 
@@ -364,62 +457,83 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Phone Number',
+          _loginMethod == _LoginMethod.email ? 'Email' : 'Phone Number',
           style: AppTheme.lightTheme.textTheme.labelLarge?.copyWith(
             color: AppTheme.lightTheme.colorScheme.onSurface,
           ),
         ),
         SizedBox(height: 1.h),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(2.w),
-            border: Border.all(
-              color: _phoneError != null
-                  ? AppTheme.lightTheme.colorScheme.error
-                  : AppTheme.lightTheme.colorScheme.outline,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Country Code Picker
-              CountryCodePickerWidget(
-                selectedCountryCode: _selectedCountryCode,
-                onCountryCodeChanged: (code) {
-                  setState(() {
-                    _selectedCountryCode = code;
-                  });
-                },
+        if (_loginMethod == _LoginMethod.phone)
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2.w),
+              border: Border.all(
+                color: _phoneError != null
+                    ? AppTheme.lightTheme.colorScheme.error
+                    : AppTheme.lightTheme.colorScheme.outline,
               ),
-
-              // Phone Number Input
-              Expanded(
-                child: TextFormField(
-                  controller: _phoneController,
-                  focusNode: _phoneFocusNode,
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
-                  ],
-                  decoration: InputDecoration(
-                    hintText: 'Enter phone number',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 4.w,
-                      vertical: 2.h,
+            ),
+            child: Row(
+              children: [
+                CountryCodePickerWidget(
+                  selectedCountryCode: _selectedCountryCode,
+                  onCountryCodeChanged: (code) {
+                    setState(() {
+                      _selectedCountryCode = code;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller: _phoneController,
+                    focusNode: _phoneFocusNode,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: 'Enter phone number',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 4.w,
+                        vertical: 2.h,
+                      ),
+                      prefixIcon: CustomIconWidget(
+                        iconName: 'phone',
+                        color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                        size: 5.w,
+                      ),
                     ),
-                    prefixIcon: CustomIconWidget(
-                      iconName: 'phone',
-                      color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                      size: 5.w,
-                    ),
+                    style: AppTheme.lightTheme.textTheme.bodyLarge,
                   ),
-                  style: AppTheme.lightTheme.textTheme.bodyLarge,
+                ),
+              ],
+            ),
+          )
+        else
+          TextFormField(
+            controller: _phoneController,
+            focusNode: _phoneFocusNode,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'Enter email address',
+              prefixIcon: CustomIconWidget(
+                iconName: 'person',
+                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                size: 5.w,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(2.w),
+                borderSide: BorderSide(
+                  color: _phoneError != null
+                      ? AppTheme.lightTheme.colorScheme.error
+                      : AppTheme.lightTheme.colorScheme.outline,
                 ),
               ),
-            ],
+            ),
+            style: AppTheme.lightTheme.textTheme.bodyLarge,
           ),
-        ),
         if (_phoneError != null) ...[
           SizedBox(height: 0.5.h),
           Text(
@@ -597,27 +711,5 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSignUpLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'New user? ',
-          style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        TextButton(
-          onPressed: _handleSignUp,
-          child: Text(
-            'Sign Up',
-            style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.lightTheme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // Sign Up UI removed.
 }

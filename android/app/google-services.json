@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "153260278526",
+    "project_id": "farmconnect-9826b",
+    "storage_bucket": "farmconnect-9826b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:153260278526:android:713e84459cf8e3c6481baf",
+        "android_client_info": {
+          "package_name": "com.farmconnect.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtKxtowLoT2lxlyCdSCoOcl1y-ewoX7dk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

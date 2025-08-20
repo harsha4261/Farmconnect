@@ -113,7 +113,7 @@ class _PriceTrendsWidgetState extends State<PriceTrendsWidget> {
 
                   // Crop Selection Dropdown
                   DropdownButtonFormField<String>(
-                    value: _selectedCrop,
+                    initialValue: _selectedCrop,
                     decoration: InputDecoration(
                       labelText: 'Select Crop',
                       border: OutlineInputBorder(

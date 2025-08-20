@@ -206,7 +206,7 @@ class _EquipmentFilterWidgetState extends State<EquipmentFilterWidget> {
                     _isAvailableOnly = value;
                   });
                 },
-                activeColor: AppTheme.primaryLight,
+                activeThumbColor: AppTheme.primaryLight,
               ),
             ],
           ),

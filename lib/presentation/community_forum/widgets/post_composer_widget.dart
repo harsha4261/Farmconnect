@@ -141,7 +141,7 @@ class _PostComposerWidgetState extends State<PostComposerWidget> {
             ),
             SizedBox(height: 1.h),
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
