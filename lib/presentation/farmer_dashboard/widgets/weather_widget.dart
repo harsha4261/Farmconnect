@@ -4,6 +4,8 @@ import 'package:sizer/sizer.dart';
 import '../../../core/app_export.dart';
 import '../../../widgets/custom_glassmorphism_card.dart';
 import '../../../widgets/custom_gradient_container.dart';
+import '../../../core/services/ai/agents/multi_agent_orchestrator.dart';
+import '../../../core/services/ai/precautions_service.dart';
 
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
@@ -17,6 +19,9 @@ class _WeatherWidgetState extends State<WeatherWidget>
   late AnimationController _animationController;
   late Animation<double> _bounceAnimation;
   late Animation<double> _fadeAnimation;
+  final _ai = MultiAgentOrchestrator();
+  final _precautions = PrecautionsService();
+  List<String> _advisories = [];
 
   @override
   void initState() {
@@ -165,7 +170,7 @@ class _WeatherWidgetState extends State<WeatherWidget>
                                     ).createShader(bounds);
                                   },
                                   child: Text(
-                                    '28°C',
+                                    '—',
                                     style: AppTheme
                                         .lightTheme.textTheme.displayMedium
                                         ?.copyWith(
@@ -175,15 +180,23 @@ class _WeatherWidgetState extends State<WeatherWidget>
                                   ),
                                 ),
                                 SizedBox(height: 1.h),
-                                Text(
-                                  'Sunny & Clear',
-                                  style: AppTheme.lightTheme.textTheme.bodyLarge
-                                      ?.copyWith(
-                                    color: AppTheme
-                                        .lightTheme.colorScheme.onPrimary
-                                        .withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                FutureBuilder<String>(
+                                  future: _ai.route('weather forecast'),
+                                  builder: (context, snapshot) {
+                                    final txt = snapshot.data ??
+                                        'Fetching local forecast...';
+                                    return Text(
+                                      txt,
+                                      style: AppTheme
+                                          .lightTheme.textTheme.bodyLarge
+                                          ?.copyWith(
+                                        color: AppTheme
+                                            .lightTheme.colorScheme.onPrimary
+                                            .withValues(alpha: 0.9),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -290,16 +303,26 @@ class _WeatherWidgetState extends State<WeatherWidget>
                                       ),
                                     ),
                                     SizedBox(height: 0.5.h),
-                                    Text(
-                                      'Perfect weather for outdoor farm work today!',
-                                      style: AppTheme
-                                          .lightTheme.textTheme.bodySmall
-                                          ?.copyWith(
-                                        color: AppTheme
-                                            .lightTheme.colorScheme.onPrimary
-                                            .withValues(alpha: 0.9),
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                    FutureBuilder<List<String>>(
+                                      future:
+                                          _precautions.getPrecautions(crop: 'Tomato'),
+                                      builder: (context, snap) {
+                                        _advisories = snap.data ?? _advisories;
+                                        final first = _advisories.isNotEmpty
+                                            ? _advisories.first
+                                            : 'Stay updated with local advisories.';
+                                        return Text(
+                                          first,
+                                          style: AppTheme
+                                              .lightTheme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: AppTheme
+                                                .lightTheme.colorScheme.onPrimary
+                                                .withValues(alpha: 0.9),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
+import 'package:bot_toast/bot_toast.dart';
 
 import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
@@ -40,6 +41,7 @@ void main() async {
   await NotificationService.initialize();
 
   runApp(MyApp());
+  BotToastInit(); // Initialize BotToast
 }
 
 class MyApp extends StatelessWidget {
@@ -48,6 +50,8 @@ class MyApp extends StatelessWidget {
     return Sizer(builder: (context, orientation, screenType) {
       return MaterialApp(
         title: 'farmconnect',
+        builder: BotToastInit(), // Set BotToast's global toast builder
+        navigatorObservers: [BotToastNavigatorObserver()], // Register route observer
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,

@@ -137,7 +137,10 @@ class _LoginScreenState extends State<LoginScreen> {
           await AuthService().signInWithEmail(input, password);
         } on FirebaseAuthException catch (e) {
           if (e.code == 'user-not-found') {
-            await AuthService().createUserWithEmail(input, password);
+            setState(() {
+              _generalError = 'No user found for that email. Please sign up.';
+            });
+            return;
           } else if (e.code == 'invalid-credential' || e.code == 'wrong-password') {
             setState(() {
               _generalError = 'Incorrect password. Please try again.';
@@ -189,9 +192,11 @@ class _LoginScreenState extends State<LoginScreen> {
             'Network error. Please check your connection and try again.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -245,41 +250,48 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _handleForgotPassword() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Reset Password',
-          style: AppTheme.lightTheme.textTheme.titleLarge,
-        ),
-        content: Text(
-          'Password reset link will be sent to your registered phone number via SMS.',
-          style: AppTheme.lightTheme.textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+  Future<void> _handleForgotPassword() async {
+    final email = _phoneController.text.trim();
+    if (_loginMethod == _LoginMethod.email && email.isNotEmpty) {
+      try {
+        await AuthService().sendPasswordResetEmail(email);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset link sent to your email.'),
+            duration: Duration(seconds: 3),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password reset SMS sent successfully!'),
-                  duration: Duration(seconds: 3),
-                ),
-              );
-            },
-            child: const Text('Send SMS'),
+        );
+      } catch (e) {
+        setState(() {
+          _generalError = 'Failed to send password reset email. Please try again.';
+        });
+      }
+    } else if (_loginMethod == _LoginMethod.email) {
+      setState(() {
+        _phoneError = 'Please enter your email address.';
+      });
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            'Reset Password',
+            style: AppTheme.lightTheme.textTheme.titleLarge,
           ),
-        ],
-      ),
-    );
+          content: Text(
+            'Password reset is only available for email login.',
+            style: AppTheme.lightTheme.textTheme.bodyMedium,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
-
-  // No dedicated signup screen; email login will auto-create accounts when needed.
 
   @override
   void dispose() {
@@ -359,8 +371,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   SizedBox(height: 4.h),
-
-                  // Sign Up link removed (JIT account creation in email flow)
+                  
+                  // Test Toast Button
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.toastTestScreen);
+                    },
+                    child: Text(
+                      'Test Toast Notifications',
+                      style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.green[800],
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                  
+                  // Sign Up Button
+                  _buildSignUpButton(),
 
                   SizedBox(height: 2.h),
                 ],
@@ -369,6 +396,30 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSignUpButton() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account?",
+          style: AppTheme.lightTheme.textTheme.bodyMedium,
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.userRegistration);
+          },
+          child: Text(
+            'Sign Up',
+            style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.lightTheme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -710,6 +761,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  // Sign Up UI removed.
 }

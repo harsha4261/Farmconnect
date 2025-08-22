@@ -9,6 +9,8 @@ import './widgets/active_booking_card.dart';
 import './widgets/quick_action_card.dart';
 import './widgets/recent_activity_item.dart';
 import './widgets/weather_widget.dart';
+import '../../core/services/config/app_config_service.dart';
+import '../../core/models/nav_item.dart';
 
 class FarmerDashboard extends StatefulWidget {
   const FarmerDashboard({super.key});
@@ -21,6 +23,13 @@ class _FarmerDashboardState extends State<FarmerDashboard>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _headerAnimationController;
+  final _config = AppConfigService();
+  List<NavItem> _navItems = [
+    NavItem(title: 'Dashboard', icon: 'dashboard', route: '/farmer-dashboard', roles: const ['farmer']),
+    NavItem(title: 'Search', icon: 'search', route: '/job-search-and-filtering', roles: const ['farmer']),
+    NavItem(title: 'Bookings', icon: 'book', route: '/booking-management', roles: const ['farmer']),
+    NavItem(title: 'Profile', icon: 'person', route: '/profile-management', roles: const ['farmer']),
+  ];
   late Animation<double> _headerAnimation;
   bool _isConnected = true;
   bool _isRefreshing = false;
@@ -99,7 +108,19 @@ class _FarmerDashboardState extends State<FarmerDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: _navItems.length, vsync: this);
+    // Live update bottom tabs from Firestore
+    _config.navItemsStream('farmer').listen((items) {
+      // Guard against TabController length mismatches by only applying
+      // dynamic config when it matches the expected tabs count (4).
+      if (items.isNotEmpty && items.length == 4) {
+        setState(() {
+          _navItems = items;
+          _tabController.dispose();
+          _tabController = TabController(length: _navItems.length, vsync: this);
+        });
+      }
+    });
     _headerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,

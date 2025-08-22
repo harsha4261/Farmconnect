@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sizer/sizer.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfessionalTabWidget extends StatefulWidget {
   final String userRole;
@@ -62,10 +63,14 @@ class _ProfessionalTabWidgetState extends State<ProfessionalTabWidget> {
 
                       // Verification Section
                       _buildVerificationSection(),
+                      SizedBox(height: 16.sp),
+                      if (widget.userRole == 'worker') _buildSkillVerificationActions(),
                       SizedBox(height: 24.sp),
 
                       // Skills and Certifications
                       _buildSkillsSection(),
+                      SizedBox(height: 24.sp),
+                      _buildTrainingHubCard(),
                       SizedBox(height: 32.sp),
 
                       // Save Button
@@ -179,6 +184,114 @@ class _ProfessionalTabWidgetState extends State<ProfessionalTabWidget> {
                   fontWeight: FontWeight.w500,
                   color: isVerified ? Colors.green : Colors.orange))),
     ]);
+  }
+
+  Widget _buildSkillVerificationActions() {
+    return Container(
+        padding: EdgeInsets.all(16.sp),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.sp),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withAlpha(26),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2)),
+            ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Skill Verification',
+              style:
+                  GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+          SizedBox(height: 12.sp),
+          Row(children: [
+            Expanded(
+                child: OutlinedButton.icon(
+                    onPressed: _handleUploadCertification,
+                    icon: const Icon(Icons.upload_file),
+                    label: const Text('Upload Certification'))),
+            SizedBox(width: 8.sp),
+            Expanded(
+                child: ElevatedButton.icon(
+                    onPressed: _handleStartQuiz,
+                    icon: const Icon(Icons.quiz),
+                    label: const Text('Take Quiz'))),
+          ])
+        ]));
+  }
+
+  Future<void> _handleUploadCertification() async {
+    final picker = ImagePicker();
+    final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+    if (!mounted) return;
+    if (file == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Selected file: ${file.name} (upload coming soon)')));
+  }
+
+  void _handleStartQuiz() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String topic = 'Pesticide Safety';
+        return AlertDialog(
+          title: const Text('Start Quiz'),
+          content: DropdownButtonFormField<String>(
+            initialValue: topic,
+            items: const [
+              DropdownMenuItem(value: 'Pesticide Safety', child: Text('Pesticide Safety')),
+              DropdownMenuItem(value: 'Equipment Operation', child: Text('Equipment Operation')),
+              DropdownMenuItem(value: 'First Aid', child: Text('First Aid')),
+            ],
+            onChanged: (v) => topic = v ?? 'Pesticide Safety',
+            decoration: const InputDecoration(labelText: 'Topic'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Quiz "$topic" coming soon')));
+                },
+                child: const Text('Start'))
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTrainingHubCard() {
+    return Container(
+        padding: EdgeInsets.all(16.sp),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.sp),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withAlpha(26),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2)),
+            ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.play_circle_fill),
+            SizedBox(width: 8.sp),
+            Text('Training Hub',
+                style: GoogleFonts.inter(
+                    fontSize: 16.sp, fontWeight: FontWeight.w600))
+          ]),
+          SizedBox(height: 8.sp),
+          Text('Watch short tutorials on safety, equipment, and best practices.',
+              style: GoogleFonts.inter(fontSize: 12.sp)),
+          SizedBox(height: 12.sp),
+          SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/training-hub');
+                  },
+                  child: const Text('Open Training Hub')))
+        ]));
   }
 
   Widget _buildSkillsSection() {

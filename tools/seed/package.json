@@ -1,0 +1,9 @@
+{
+  "name": "farmconnect-firestore-seed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "yargs": "^17.7.2"
+  }
+}

@@ -197,12 +197,14 @@ class _SplashScreenState extends State<SplashScreen>
                     hasConnectivity: _hasConnectivity,
                   ),
 
-                  // Main content
+                  // Main content (scrollable to avoid overflows on small/web screens)
                   Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                           // Enhanced logo with beautiful animations
                           AnimatedBuilder(
                             animation: Listenable.merge([
@@ -244,7 +246,7 @@ class _SplashScreenState extends State<SplashScreen>
                             },
                           ),
 
-                          SizedBox(height: 24.h),
+                          SizedBox(height: 6.h),
 
                           // Enhanced app title with gradient text
                           ShaderMask(
@@ -269,7 +271,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
 
-                          SizedBox(height: 12.h),
+                          SizedBox(height: 3.h),
 
                           // Enhanced subtitle with beautiful styling
                           CustomGlassmorphismCard(
@@ -294,7 +296,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
 
-                          SizedBox(height: 64.h),
+                          SizedBox(height: 6.h),
 
                           // Enhanced loading indicator
                           CustomGlassmorphismCard(
@@ -308,46 +310,45 @@ class _SplashScreenState extends State<SplashScreen>
                                   (_currentStage + 1) / _loadingStages.length,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
 
-                  // Enhanced bottom section
-                  Padding(
-                    padding: EdgeInsets.all(24.w),
-                    child: Column(
-                      children: [
-                        // Biometric prompt
-                        if (_showBiometricPrompt)
-                          CustomGlassmorphismCard(
-                            opacity: 0.2,
-                            blurRadius: 25,
-                            child: BiometricPromptWidget(
-                              onSuccess: _onBiometricSuccess,
-                              onSkip: _onBiometricSkip,
+                          // --- Bottom section moved inside scroll view to avoid Column overflow ---
+                          SizedBox(height: 4.h),
+                          Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            child: Column(
+                              children: [
+                                if (_showBiometricPrompt)
+                                  CustomGlassmorphismCard(
+                                    opacity: 0.2,
+                                    blurRadius: 25,
+                                    child: BiometricPromptWidget(
+                                      onSuccess: _onBiometricSuccess,
+                                      onSkip: _onBiometricSkip,
+                                    ),
+                                  ),
+                                SizedBox(height: 6.h),
+                                CustomGlassmorphismCard(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  opacity: 0.1,
+                                  blurRadius: 10,
+                                  child: Text(
+                                    'Version 1.0.0 • Agricultural Labor Compliant',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-
-                        SizedBox(height: 16.h),
-
-                        // Enhanced app version and compliance
-                        CustomGlassmorphismCard(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          opacity: 0.1,
-                          blurRadius: 10,
-                          child: Text(
-                            'Version 1.0.0 • Agricultural Labor Compliant',
-                            style: GoogleFonts.inter(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.8),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],

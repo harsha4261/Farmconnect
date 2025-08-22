@@ -46,6 +46,8 @@ class AuthService {
   Future<UserCredential> signInWithCredential(PhoneAuthCredential credential) {
     return _auth.signInWithCredential(credential);
   }
+
+  Future<void> sendPasswordResetEmail(String email) {
+    return _auth.sendPasswordResetEmail(email: email);
+  }
 }
-
-

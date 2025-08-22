@@ -160,6 +160,23 @@ class _BookingDetailsModalState extends State<BookingDetailsModal>
             title: 'Job Information',
             icon: 'work',
             children: [
+              Row(
+                children: [
+                  CustomIconWidget(
+                    iconName: 'group',
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    size: 18,
+                  ),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                    child: Text(
+                      'Assigned Team: ${widget.booking['teamName'] ?? 'None'}',
+                      style: AppTheme.lightTheme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 1.h),
               _buildInfoRow('Job Type', widget.booking['jobType'] as String),
               _buildInfoRow('Duration', widget.booking['duration'] as String),
               _buildInfoRow(

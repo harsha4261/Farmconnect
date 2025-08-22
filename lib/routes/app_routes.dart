@@ -13,6 +13,9 @@ import '../presentation/profile_management/profile_management.dart';
 import '../presentation/smart_farm_tools/smart_farm_tools.dart';
 import '../presentation/community_forum/community_forum.dart';
 import '../presentation/equipment_rental/equipment_rental.dart';
+import '../presentation/inventory/inventory.dart';
+import '../presentation/learning_hub/training_hub.dart';
+import '../test_screens/toast_test_screen.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -31,6 +34,9 @@ class AppRoutes {
   static const String smartFarmTools = '/smart-farm-tools';
   static const String communityForum = '/community-forum';
   static const String equipmentRental = '/equipment-rental';
+  static const String inventory = '/inventory';
+  static const String trainingHub = '/training-hub';
+  static const String toastTestScreen = '/toast-test';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -48,6 +54,9 @@ class AppRoutes {
     smartFarmTools: (context) => const SmartFarmTools(),
     communityForum: (context) => const CommunityForum(),
     equipmentRental: (context) => const EquipmentRental(),
+    inventory: (context) => const Inventory(),
+    trainingHub: (context) => const TrainingHub(),
+    toastTestScreen: (context) => const ToastTestScreen(),
     // TODO: Add your other routes here
   };
 }
